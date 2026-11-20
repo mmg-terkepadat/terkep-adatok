@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Feladatlista a havi futáshoz: melyik Geofabrik-fájlból melyik kivonat készül."""
-import json, os, sys, urllib.request
+import json, os, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-UA = {'User-Agent': 'osm-poi-builder/1.0 (+https://github.com/mmg-terkepadat/terkep-adatok)'}
 
-idx = json.load(urllib.request.urlopen(urllib.request.Request('https://download.geofabrik.de/index-v1-nogeom.json', headers=UA), timeout=120))
+# a jegyzéket a workflow tölti le curl-lel (megbízhatóbb, IPv4-en)
+idx = json.load(open(sys.argv[1] if len(sys.argv) > 1 else 'geofabrik-index.json', encoding='utf-8'))
 feats = [f['properties'] for f in idx['features'] if f['properties'].get('urls', {}).get('pbf')]
 
 

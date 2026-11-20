@@ -33,7 +33,8 @@ jobs:
           EVENT: ${{ github.event_name }}
         run: |
           if [ "$EVENT" = "push" ]; then export ONLY="$(cat only.txt)"; fi
-          python3 scripts/plan.py >> "$GITHUB_OUTPUT"
+          curl -4 -fsSL --retry 5 --retry-delay 20 --retry-all-errors -A "osm-poi-builder/1.0 (+https://github.com/${{ github.repository }})" -o geofabrik-index.json https://download.geofabrik.de/index-v1-nogeom.json
+          python3 scripts/plan.py geofabrik-index.json >> "$GITHUB_OUTPUT"
 
   build:
     needs: plan
@@ -55,7 +56,7 @@ jobs:
       - name: Letöltés (Geofabrik)
         run: |
           sudo mkdir -p /mnt/w && sudo chown "$USER" /mnt/w
-          curl -fL --retry 4 --retry-delay 30 -A "osm-poi-builder/1.0 (+https://github.com/${{ github.repository }})" -o /mnt/w/in.osm.pbf "${{ matrix.url }}"
+          curl -4 -fL --retry 5 --retry-delay 30 --retry-all-errors -A "osm-poi-builder/1.0 (+https://github.com/${{ github.repository }})" -o /mnt/w/in.osm.pbf "${{ matrix.url }}"
           ls -la /mnt/w
       - name: Szűrés
         run: |
