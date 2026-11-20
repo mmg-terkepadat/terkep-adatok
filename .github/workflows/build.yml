@@ -5,7 +5,7 @@ on:
     - cron: '23 1 3 * *'    # minden hónap 3-án, éjjel
   push:
     branches: [main]
-    paths: ['only.txt']   # próbafuttatás: az only.txt-ben felsorolt tételek
+    paths: [only.txt]   # kézi indítás: az only.txt módosítása (üresen = minden ország)
   workflow_dispatch:
     inputs:
       only:
@@ -42,38 +42,42 @@ jobs:
     timeout-minutes: 330
     strategy:
       fail-fast: false
-      max-parallel: 6
+      max-parallel: 2   # a Geofabrik nem szereti a sok párhuzamos letöltést
       matrix: ${{ fromJson(needs.plan.outputs.matrix) }}
     name: ${{ matrix.job }}-${{ matrix.cc }}
     steps:
       - uses: actions/checkout@v4
       - name: Hely felszabadítása
-        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          # a nagyobb szabad helyű lemezre dolgozunk (az USA-fájl 10 GB fölött van)
+          if [ "$(df --output=avail / | tail -1)" -gt "$(df --output=avail /mnt | tail -1)" ]; then W="$HOME/w"; else W=/mnt/w; fi
+          sudo mkdir -p "$W" && sudo chown "$USER" "$W" && echo "W=$W" >> "$GITHUB_ENV"
+          df -h / /mnt
       - name: Eszközök
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq osmium-tool
           pip install --quiet osmium
       - name: Letöltés (Geofabrik)
         run: |
-          sudo mkdir -p /mnt/w && sudo chown "$USER" /mnt/w
-          curl -fL --retry 5 --retry-delay 30 --retry-all-errors -A "osm-poi-builder/1.0 (+https://github.com/${{ github.repository }})" -o /mnt/w/in.osm.pbf "${{ matrix.url }}"
-          ls -la /mnt/w
+          curl -fL --retry 8 --retry-delay 60 --retry-all-errors -A "osm-poi-builder/1.0 (+https://github.com/${{ github.repository }})" -o "$W/in.osm.pbf" "${{ matrix.url }}"
+          ls -la "$W"
       - name: Szűrés
         run: |
-          osmium tags-filter /mnt/w/in.osm.pbf \
+          osmium tags-filter $W/in.osm.pbf \
             nwr/amenity=pharmacy,doctors,clinic,dentist,hospital,post_office,atm,bank,fuel,charging_station,restaurant,cafe,fast_food,pub,school,kindergarten,parking \
             nwr/shop=supermarket,convenience,greengrocer,bakery nwr/leisure=playground \
             nwr/tourism=attraction,viewpoint,museum,picnic_site,hotel,guest_house,apartment,hostel,camp_site \
             nwr/historic=castle,monument nwr/natural=peak,spring,cave_entrance nwr/tower:type=observation \
-            -o /mnt/w/f.osm.pbf --overwrite
-          rm /mnt/w/in.osm.pbf
+            -o $W/f.osm.pbf --overwrite
+          rm $W/in.osm.pbf
       - name: Feldolgozás
         run: |
           mkdir -p out
           if [ "${{ matrix.job }}" = "hu" ]; then
-            python3 scripts/build.py hu /mnt/w/f.osm.pbf out
+            python3 scripts/build.py hu $W/f.osm.pbf out
           else
-            python3 scripts/build.py com "${{ matrix.cc }}" /mnt/w/f.osm.pbf out
+            python3 scripts/build.py com "${{ matrix.cc }}" $W/f.osm.pbf out
           fi
       - uses: actions/upload-artifact@v4
         with:
@@ -100,5 +104,13 @@ jobs:
           gh release download data-latest -p manifest.json -O old-manifest.json 2>/dev/null || true
           python3 scripts/manifest.py art old-manifest.json
           ls art/*.gz.info.json >/dev/null 2>&1 || { echo "Nincs új fájl."; exit 1; }
-          for f in art/*.gz; do [ -f "$f.info.json" ] && gh release upload data-latest "$f" --clobber; done
+          for f in art/*.gz; do if [ -f "$f.info.json" ]; then gh release upload data-latest "$f" --clobber; fi; done
           gh release upload data-latest art/manifest.json --clobber
+      - name: Életjel (a GitHub 60 nap tétlenség után leállítja az ütemezett futást – a havi kis commit ezt megakadályozza)
+        run: |
+          python3 -c "import json,time; m=json.load(open('art/manifest.json')); json.dump({'last_run': time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime()), 'files': len(m['files'])}, open('status.json','w'), indent=1)"
+          git config user.name "terkep-adatok bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add status.json
+          git commit -m "Havi futás: $(date -u +%Y-%m-%d)" || exit 0
+          git push
