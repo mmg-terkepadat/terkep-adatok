@@ -6,7 +6,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # a jegyzéket a workflow tölti le curl-lel (megbízhatóbb, IPv4-en)
 idx = json.load(open(sys.argv[1] if len(sys.argv) > 1 else 'geofabrik-index.json', encoding='utf-8'))
-feats = [f['properties'] for f in idx['features'] if f['properties'].get('urls', {}).get('pbf')]
+feats = [f['properties'] for f in idx.get('features', []) if f.get('properties', {}).get('urls', {}).get('pbf')]
+print(f'Geofabrik: {len(idx.get("features", []))} terület, ebből {len(feats)} pbf-fel', file=sys.stderr)
+if idx.get('features'):
+    print('minta: ' + json.dumps(idx['features'][0].get('properties', {}))[:600], file=sys.stderr)
 
 
 def url_for(cc):
