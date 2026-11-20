@@ -3,7 +3,7 @@
 Közérdekű helyek kigyűjtése egy OpenStreetMap-kivonatból (Geofabrik .osm.pbf).
 
   build.py hu  <input.pbf> <out_dir>      -> hu-poi.sqlite.gz  (a magyar oldal adatbázisa)
-  build.py com <CC> <input.pbf> <out_dir> -> com-<CC>.jsonl.gz  (a nagyvárosok helyei egy országban)
+  build.py com <CC[,CC…]> <input.pbf> <out_dir> -> com-<CC>.jsonl.gz  (a nagyvárosok helyei egy országban)
 
 A bemenetet előtte az osmium tags-filter szűri (lásd a workflow-t), így ez a lépés gyors.
 Adat: © OpenStreetMap közreműködők, ODbL.
@@ -137,7 +137,8 @@ def build_com(cc, pbf, out_dir):
     cats = cfg['categories']
     cities = cfg['cities'].get(cc, [])
     if not cities:
-        sys.exit(f'{cc}: nincs város a listában')
+        print(f'::warning::{cc}: nincs város a listában')
+        return
     unnamed_ok = {'parking', 'playgrounds', 'atms', 'outdoors'}
     # rácsos index: 0,1 fokos cellák -> a környező városok
     grid = {}
@@ -190,7 +191,8 @@ def build_com(cc, pbf, out_dir):
     places = cities
     print(f'{cc}: {len(places)} város, {total} hely')
     if total == 0:
-        sys.exit(f'{cc}: egy hely sincs – valószínűleg hibás bemenet.')
+        print(f'::warning::{cc}: egy hely sincs – valószínűleg hibás bemenet, nem tesszük közzé.')
+        return
     json.dump({'places': len(places), 'rows': total}, open(out + '.info.json', 'w'))
 
 
@@ -198,4 +200,6 @@ if __name__ == '__main__':
     if sys.argv[1] == 'hu':
         build_hu(sys.argv[2], sys.argv[3])
     else:
-        build_com(sys.argv[2], sys.argv[3], sys.argv[4])
+        # több ország is jöhet egy fájlból (pl. gcc-states): vesszővel elválasztva
+        for cc in sys.argv[2].split(','):
+            build_com(cc, sys.argv[3], sys.argv[4])

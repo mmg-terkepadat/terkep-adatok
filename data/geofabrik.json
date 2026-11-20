@@ -1,0 +1,17 @@
+{
+ "AD": ["andorra"], "AE": ["gcc-states"], "AL": ["albania"], "AR": ["argentina"], "AT": ["austria"], "AU": ["australia"],
+ "BA": ["bosnia-herzegovina"], "BE": ["belgium"], "BG": ["bulgaria"], "BH": ["gcc-states"], "BO": ["bolivia"], "BR": ["brazil"],
+ "BY": ["belarus"], "CA": ["canada"], "CH": ["switzerland"], "CL": ["chile"], "CO": ["colombia"], "CR": ["costa-rica"],
+ "CU": ["cuba"], "CY": ["cyprus"], "CZ": ["czech-republic"], "DE": ["germany"], "DK": ["denmark"], "DO": ["haiti-and-domrep"],
+ "EC": ["ecuador"], "EE": ["estonia"], "EG": ["egypt"], "ES": ["spain"], "FI": ["finland"], "FR": ["france"],
+ "GB": ["united-kingdom", "great-britain"], "GR": ["greece"], "GT": ["guatemala"], "HN": ["honduras"], "HR": ["croatia"],
+ "HU": ["hungary"], "IE": ["ireland-and-northern-ireland"], "IN": ["india"], "IS": ["iceland"], "IT": ["italy"], "JP": ["japan"],
+ "KE": ["kenya"], "KR": ["south-korea"], "KW": ["gcc-states"], "LI": ["liechtenstein"], "LT": ["lithuania"], "LU": ["luxembourg"],
+ "LV": ["latvia"], "MC": ["monaco"], "MD": ["moldova"], "ME": ["montenegro"], "MK": ["macedonia", "north-macedonia"], "MT": ["malta"],
+ "MX": ["mexico"], "MY": ["malaysia-singapore-brunei"], "NG": ["nigeria"], "NI": ["nicaragua"], "NL": ["netherlands"], "NO": ["norway"],
+ "NZ": ["new-zealand"], "OM": ["gcc-states"], "PA": ["panama"], "PE": ["peru"], "PH": ["philippines"], "PL": ["poland"],
+ "PT": ["portugal"], "PY": ["paraguay"], "QA": ["gcc-states"], "RO": ["romania"], "RS": ["serbia"], "SA": ["gcc-states"],
+ "SE": ["sweden"], "SG": ["malaysia-singapore-brunei"], "SI": ["slovenia"], "SK": ["slovakia"], "SM": ["italy"], "SV": ["el-salvador"],
+ "TR": ["turkey"], "UA": ["ukraine"], "US": ["us"], "UY": ["uruguay"], "VA": ["italy"], "VE": ["venezuela"], "XK": ["kosovo"],
+ "ZA": ["south-africa", "south-africa-and-lesotho"]
+}

@@ -77,7 +77,7 @@ jobs:
           fi
       - uses: actions/upload-artifact@v4
         with:
-          name: out-${{ matrix.job }}-${{ matrix.cc }}
+          name: out-${{ strategy.job-index }}
           path: out/
           retention-days: 5
 
