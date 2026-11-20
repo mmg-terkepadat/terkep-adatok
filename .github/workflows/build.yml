@@ -58,9 +58,20 @@ jobs:
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq osmium-tool
           pip install --quiet osmium
-      - name: Letöltés (Geofabrik)
+      - name: "Letöltés (Geofabrik, tartalék: openstreetmap.fr)"
         run: |
-          curl -fL --retry 8 --retry-delay 60 --retry-all-errors -A "osm-poi-builder/1.0 (+https://github.com/${{ github.repository }})" -o "$W/in.osm.pbf" "${{ matrix.url }}"
+          UA="osm-poi-builder/1.0 (+https://github.com/${{ github.repository }})"
+          U="${{ matrix.url }}"
+          # a Geofabrik időnként elutasítja a GitHub-gépeket – ilyenkor a francia OSM-tükörről töltünk
+          ALT="https://download.openstreetmap.fr/extracts/${U#https://download.geofabrik.de/}"
+          ok=0
+          for try in 1 2 3; do
+            curl -fL --retry 3 --retry-delay 20 --retry-all-errors -A "$UA" -o "$W/in.osm.pbf" "$U" && { ok=1; break; }
+            echo "Geofabrik nem elérhető, tükör: $ALT"
+            curl -fL --retry 2 --retry-delay 20 -A "$UA" -o "$W/in.osm.pbf" "$ALT" && { ok=1; break; }
+            sleep 120
+          done
+          [ "$ok" = 1 ] || exit 1
           ls -la "$W"
       - name: Szűrés
         run: |
