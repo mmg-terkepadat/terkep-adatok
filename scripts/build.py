@@ -142,7 +142,7 @@ def build_com(cc, pbf, out_dir):
     unnamed_ok = {'parking', 'playgrounds', 'atms', 'outdoors'}
     # rácsos index: 0,1 fokos cellák -> a környező városok
     grid = {}
-    for i, (key, name, la, lo, r) in enumerate(cities):
+    for i, (key, name, la, lo, r) in enumerate(c[:5] for c in cities):
         dla = r / 111320 + 0.01
         dlo = r / (111320 * max(0.2, math.cos(math.radians(la)))) + 0.01
         for gy in range(math.floor((la - dla) * 10), math.floor((la + dla) * 10) + 1):
@@ -163,7 +163,7 @@ def build_com(cc, pbf, out_dir):
         if not name and c == 'outdoors' and t.get('natural') == 'peak':
             continue
         for i in near:
-            key, cname, cla, clo, r = cities[i]
+            key, cname, cla, clo, r = cities[i][:5]
             d = dist_m(cla, clo, la, lo)
             if d > r:
                 continue
@@ -178,7 +178,9 @@ def build_com(cc, pbf, out_dir):
     total = 0
     # soronként egy város (JSON Lines): a weboldal így kevés memóriával, soronként tudja beolvasni
     with gzip.open(out, 'wt', encoding='utf-8', compresslevel=9) as g:
-        for i, (key, name, la, lo, r) in enumerate(cities):
+        for i, city in enumerate(cities):
+            key, name, la, lo, r = city[:5]
+            tier = city[5] if len(city) > 5 else 1
             # kategóriánként a legközelebbi 150, összesen legfeljebb 1500 (mint az élő lekérdezésnél)
             per = {}
             for d, it in sorted(found[i], key=lambda x: x[0]):
@@ -186,7 +188,10 @@ def build_com(cc, pbf, out_dir):
                 if len(lst) < 150:
                     lst.append((d, it))
             items = [it for d, it in sorted((x for l in per.values() for x in l), key=lambda x: x[0])][:1500]
-            g.write(json.dumps({'k': key, 'radius': r, 'items': items}, ensure_ascii=False, separators=(',', ':')) + '\n')
+            rec = {'k': key, 'radius': r, 'items': items}
+            if tier > 1:
+                rec['t'] = tier  # 2 = 50–100 ezer lakos (a weboldalon kikapcsolható)
+            g.write(json.dumps(rec, ensure_ascii=False, separators=(',', ':')) + '\n')
             total += len(items)
     places = cities
     print(f'{cc}: {len(places)} város, {total} hely')
