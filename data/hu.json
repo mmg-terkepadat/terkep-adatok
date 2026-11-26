@@ -6,20 +6,6 @@
                 "pharmacy"
             ]
         ],
-        "orvosi-rendelo": [
-            [
-                "amenity",
-                "doctors"
-            ],
-            [
-                "amenity",
-                "clinic"
-            ],
-            [
-                "amenity",
-                "dentist"
-            ]
-        ],
         "korhaz": [
             [
                 "amenity",
@@ -52,24 +38,6 @@
             [
                 "amenity",
                 "charging_station"
-            ]
-        ],
-        "bolt": [
-            [
-                "shop",
-                "supermarket"
-            ],
-            [
-                "shop",
-                "convenience"
-            ],
-            [
-                "shop",
-                "greengrocer"
-            ],
-            [
-                "shop",
-                "bakery"
             ]
         ],
         "iskola": [
