@@ -149,34 +149,6 @@
                 "natural",
                 "cave_entrance"
             ]
-        ],
-        "szallas": [
-            [
-                "tourism",
-                "hotel"
-            ],
-            [
-                "tourism",
-                "guest_house"
-            ],
-            [
-                "tourism",
-                "apartment"
-            ],
-            [
-                "tourism",
-                "hostel"
-            ],
-            [
-                "tourism",
-                "camp_site"
-            ]
-        ],
-        "parkolo": [
-            [
-                "amenity",
-                "parking"
-            ]
         ]
     },
     "tiles": {
