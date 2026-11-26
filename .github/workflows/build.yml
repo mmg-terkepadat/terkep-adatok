@@ -63,22 +63,28 @@ jobs:
           UA="osm-poi-builder/1.0 (+https://github.com/${{ github.repository }})"
           U="${{ matrix.url }}"
           # a Geofabrik időnként elutasítja a GitHub-gépeket – ilyenkor a francia OSM-tükörről töltünk
-          ALT="https://download.openstreetmap.fr/extracts/${U#https://download.geofabrik.de/}"
+          REL="${U#https://download.geofabrik.de/}"
+          CONT="${REL%%/*}"; BASE="$(basename "$REL")"
+          # tükrök: openstreetmap.fr (kontinens/ország-latest), és ugyanaz a Geofabrik IPv6-on (IPv4-en néha elutasítja a GitHub-gépeket)
+          ALTS="https://download.openstreetmap.fr/extracts/$CONT/$BASE https://download.openstreetmap.fr/extracts/$REL"
           ok=0
           for try in 1 2 3; do
-            curl -fL --retry 3 --retry-delay 20 --retry-all-errors -A "$UA" -o "$W/in.osm.pbf" "$U" && { ok=1; break; }
-            echo "Geofabrik nem elérhető, tükör: $ALT"
-            curl -fL --retry 2 --retry-delay 20 -A "$UA" -o "$W/in.osm.pbf" "$ALT" && { ok=1; break; }
-            sleep 120
+            curl -fL --retry 2 --retry-delay 15 --retry-all-errors --connect-timeout 20 -A "$UA" -o "$W/in.osm.pbf" "$U" && { ok=1; break; }
+            curl -6 -fL --retry 2 --retry-delay 15 --connect-timeout 20 -A "$UA" -o "$W/in.osm.pbf" "$U" && { ok=1; break; }
+            for A in $ALTS; do
+              echo "Tükör: $A"
+              curl -fL --retry 2 --retry-delay 15 --connect-timeout 20 -A "$UA" -o "$W/in.osm.pbf" "$A" && { ok=1; break 2; }
+            done
+            sleep $((90 * try))
           done
           [ "$ok" = 1 ] || exit 1
           ls -la "$W"
       - name: Szűrés
         run: |
           osmium tags-filter $W/in.osm.pbf \
-            nwr/amenity=pharmacy,doctors,clinic,dentist,hospital,post_office,atm,bank,fuel,charging_station,restaurant,cafe,fast_food,pub,school,kindergarten,parking \
+            nwr/amenity=pharmacy,doctors,clinic,dentist,hospital,post_office,atm,bank,fuel,charging_station,restaurant,cafe,fast_food,pub,school,kindergarten \
             nwr/shop=supermarket,convenience,greengrocer,bakery nwr/leisure=playground \
-            nwr/tourism=attraction,viewpoint,museum,picnic_site,hotel,guest_house,apartment,hostel,camp_site \
+            nwr/tourism=attraction,viewpoint,museum,picnic_site \
             nwr/historic=castle,monument nwr/natural=peak,spring,cave_entrance nwr/tower:type=observation \
             -o $W/f.osm.pbf --overwrite
           rm $W/in.osm.pbf
