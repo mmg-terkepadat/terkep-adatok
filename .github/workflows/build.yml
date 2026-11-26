@@ -82,7 +82,7 @@ jobs:
       - name: Szűrés
         run: |
           osmium tags-filter $W/in.osm.pbf \
-            nwr/amenity=pharmacy,doctors,clinic,dentist,hospital,post_office,atm,bank,fuel,charging_station,restaurant,cafe,fast_food,pub,school,kindergarten \
+            nwr/amenity=pharmacy,doctors,clinic,dentist,hospital,post_office,atm,bank,fuel,charging_station,school,kindergarten \
             nwr/shop=supermarket,convenience,greengrocer,bakery nwr/leisure=playground \
             nwr/tourism=attraction,viewpoint,museum,picnic_site \
             nwr/historic=castle,monument nwr/natural=peak,spring,cave_entrance nwr/tower:type=observation \

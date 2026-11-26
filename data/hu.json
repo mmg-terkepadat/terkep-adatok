@@ -72,24 +72,6 @@
                 "bakery"
             ]
         ],
-        "etterem": [
-            [
-                "amenity",
-                "restaurant"
-            ],
-            [
-                "amenity",
-                "cafe"
-            ],
-            [
-                "amenity",
-                "fast_food"
-            ],
-            [
-                "amenity",
-                "pub"
-            ]
-        ],
         "iskola": [
             [
                 "amenity",
