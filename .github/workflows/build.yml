@@ -83,9 +83,14 @@ jobs:
             done
             sleep $((90 * try))
           done
-          [ "$ok" = 1 ] || exit 1
+          if [ "$ok" != 1 ]; then
+            # nem hiba: a régi adat marad, és a napi pótlás holnap újra megpróbálja (így nem jön hibaüzenet)
+            echo "::warning::${{ matrix.cc }}: a letöltés most nem sikerült, holnap újrapróbálja"
+            echo "SKIP=1" >> "$GITHUB_ENV"
+          fi
           ls -la "$W"
       - name: Szűrés
+        if: env.SKIP != '1'
         run: |
           osmium tags-filter $W/in.osm.pbf \
             nwr/amenity=pharmacy,hospital,post_office,atm,bank,fuel,charging_station,school,kindergarten \
@@ -95,6 +100,7 @@ jobs:
             -o $W/f.osm.pbf --overwrite
           rm $W/in.osm.pbf
       - name: Feldolgozás
+        if: env.SKIP != '1'
         run: |
           mkdir -p out
           if [ "${{ matrix.job }}" = "hu" ]; then
@@ -103,6 +109,7 @@ jobs:
             python3 scripts/build.py com "${{ matrix.cc }}" $W/f.osm.pbf out
           fi
       - uses: actions/upload-artifact@v4
+        if: env.SKIP != '1'
         with:
           name: out-${{ strategy.job-index }}
           path: out/
