@@ -2,7 +2,8 @@ name: Térképadatok havi frissítése
 
 on:
   schedule:
-    - cron: '23 1 3 * *'    # minden hónap 3-án, éjjel
+    - cron: '23 1 3 * *'    # minden hónap 3-án, éjjel: teljes frissítés
+    - cron: '41 4 * * *'    # naponta: csak a hiányzó / elakadt országok pótlása (ha nincs ilyen, azonnal kilép)
   push:
     branches: [main]
     paths: [only.txt]   # kézi indítás: az only.txt módosítása (üresen = minden ország)
@@ -25,19 +26,24 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.p.outputs.matrix }}
+      count: ${{ steps.p.outputs.count }}
     steps:
       - uses: actions/checkout@v4
       - id: p
         env:
           ONLY: ${{ github.event.inputs.only }}
           EVENT: ${{ github.event_name }}
+          SCHED: ${{ github.event.schedule }}
+          MANIFEST_URL: https://github.com/${{ github.repository }}/releases/download/data-latest/manifest.json
         run: |
           if [ "$EVENT" = "push" ]; then export ONLY="$(cat only.txt)"; fi
+          if [ "$SCHED" = "41 4 * * *" ]; then export STALE=1; fi
           curl -fsSL --retry 5 --retry-delay 20 --retry-all-errors -A "osm-poi-builder/1.0 (+https://github.com/${{ github.repository }})" -o geofabrik-index.json https://download.geofabrik.de/index-v1-nogeom.json
           python3 scripts/plan.py geofabrik-index.json >> "$GITHUB_OUTPUT"
 
   build:
     needs: plan
+    if: ${{ needs.plan.outputs.count != '0' }}
     runs-on: ubuntu-latest
     timeout-minutes: 330
     strategy:
@@ -104,7 +110,7 @@ jobs:
 
   publish:
     needs: build
-    if: ${{ always() && needs.build.result != 'cancelled' }}
+    if: ${{ always() && needs.build.result != 'cancelled' && needs.build.result != 'skipped' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

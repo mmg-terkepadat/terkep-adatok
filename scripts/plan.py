@@ -18,6 +18,26 @@ def url_for(cc):
 
 
 only = [x.strip().upper() for x in os.environ.get('ONLY', '').split(',') if x.strip()]
+
+# Napi pótlás (STALE=1): csak a hiányzó vagy a legutóbbi futásból kimaradt fájlok – így egy elakadt
+# letöltés másnap magától újrapróbálkozik, és nem kell kézzel indítani semmit.
+if os.environ.get('STALE') == '1':
+    import time, urllib.request
+    try:
+        man = json.load(urllib.request.urlopen(os.environ['MANIFEST_URL'], timeout=60)).get('files', {})
+    except Exception as e:
+        print(f'::warning::manifest nem olvasható ({e}) – nincs pótlás', file=sys.stderr)
+        print('matrix=' + json.dumps({'include': []})); print('count=0'); sys.exit(0)
+    # „elmaradt”: hiányzik, vagy 2 nappal régebbi a legutóbbi futás legfrissebb fájljánál
+    old = max([v.get('built', 0) for v in man.values()] or [time.time()]) - 2 * 86400
+    stale = lambda name: name not in man or man[name].get('built', 0) < old
+    only = [cc for cc in world['cities'] if stale(f'com-{cc}.jsonl.gz')]
+    if stale('hu-poi.sqlite.gz'):
+        only.append('HU-DB')
+    if not only:
+        print('Minden fájl friss, nincs mit pótolni.', file=sys.stderr)
+        print('matrix=' + json.dumps({'include': []})); print('count=0'); sys.exit(0)
+    print('Pótlás: ' + ','.join(only), file=sys.stderr)
 jobs = []
 if not only or 'HU-DB' in only:
     jobs.append({'job': 'hu', 'cc': 'HU', 'url': url_for('HU')})
@@ -34,3 +54,4 @@ for u, ccs in by_url.items():
     jobs.append({'job': 'com', 'cc': ','.join(ccs), 'url': u})
 print(f'{len(jobs)} feladat', file=sys.stderr)
 print('matrix=' + json.dumps({'include': jobs}))
+print(f'count={len(jobs)}')
